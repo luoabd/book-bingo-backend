@@ -24,7 +24,7 @@ app.get("/api", function (req, res) {
     const inputValue = req.query.search_q;
 
     const response = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${inputValue}&maxResults=${max}&key=${api_key}&fields=${fields}`
+      `https://www.googleapis.com/books/v1/volumes?q=${inputValue}&maxResults=${max}&fields=${fields}`
     );
     const books = await response.json();
     return books.items;
@@ -42,20 +42,36 @@ app.post("/canvas", function (req, res) {
     ctx.drawImage(image, 0, 0);
   });
 
-  loadImage(req.body.imgLink).then((image) => {
-    ctx.drawImage(image, 135, 1510, 250, 350);
-
+  const drawBoard = async () => {
+    for (let i = 0; i < 5; i++) {
+      for (let j = 0; j < 5; j++) {
+        let idx = 5 * i + j;
+        let prompt = req.body[idx];
+        if (prompt.isFilled) {
+          // Async shenanigans
+          const draw = await loadImage(prompt.imgLink).then((image) => {
+            ctx.drawImage(image, 130 + 370 * j, 332 + 373 * i, 254, 316);
+          });
+        }
+      }
+    }
+  };
+  const exportBoard = async () => {
+    const finalBoard = await drawBoard();
     var img = canvas.toDataURL();
+
     // strip off the data: url prefix to get just the base64-encoded bytes
     var data = img.replace(/^data:image\/\w+;base64,/, "");
     var buf = Buffer.from(data, "base64");
-    fs.writeFile("image.png", buf, (err) => {
+    fs.writeFile("resul.png", buf, (err) => {
       if (err) console.log(err);
       else {
         console.log("File written successfully\n");
       }
     });
-  });
+  };
+
+  exportBoard();
 });
 
 app.listen(3000, () => {
