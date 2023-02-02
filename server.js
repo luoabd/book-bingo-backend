@@ -50,7 +50,7 @@ app.post("/canvas", function (req, res) {
         if (prompt.isFilled) {
           // Async shenanigans
           const draw = await loadImage(prompt.imgLink).then((image) => {
-            ctx.drawImage(image, 130 + 370 * j, 332 + 373 * i, 254, 316);
+            ctx.drawImage(image, 130 + 370 * j, 332 + 400 * i, 254, 316);
           });
         }
       }
@@ -63,12 +63,8 @@ app.post("/canvas", function (req, res) {
     // strip off the data: url prefix to get just the base64-encoded bytes
     var data = img.replace(/^data:image\/\w+;base64,/, "");
     var buf = Buffer.from(data, "base64");
-    fs.writeFile("resul.png", buf, (err) => {
-      if (err) console.log(err);
-      else {
-        console.log("File written successfully\n");
-      }
-    });
+    res.contentType("image/png");
+    res.send(buf);
   };
 
   exportBoard();
