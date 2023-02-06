@@ -28,6 +28,5 @@ jobs:
           cd /extra/book-bingo/book-bingo-backend/
           git pull origin main
           git status
-          export NODE_ENV='production'
           npm install --only=prod
-          npx pm2 restart server
+          NODE_ENV='production' npx pm2 restart server --update-env
