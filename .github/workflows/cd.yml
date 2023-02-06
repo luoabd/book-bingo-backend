@@ -28,5 +28,6 @@ jobs:
           cd /extra/book-bingo/book-bingo-backend/
           git pull origin master
           git status
+          export NODE_ENV=production
           npm install --only=prod
           pm2 restart server
