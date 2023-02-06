@@ -30,4 +30,4 @@ jobs:
           git status
           export NODE_ENV=production
           npm install --only=prod
-          pm2 restart server
+          npx pm2 restart server
