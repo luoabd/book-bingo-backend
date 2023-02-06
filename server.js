@@ -2,15 +2,17 @@ import fetch from "node-fetch";
 import express from "express";
 import * as dotenv from "dotenv";
 import { createCanvas, loadImage } from "canvas";
-import * as fs from "fs";
 import cors from "cors";
+import { config } from "./Constants.js";
 
 dotenv.config();
 
 const app = express();
+const URL = config.url;
+const port = config.port;
 
 let corsOptions = {
-  origin: ["http://localhost:3001"],
+  origin: [URL],
 };
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -70,6 +72,7 @@ app.post("/canvas", function (req, res) {
   exportBoard();
 });
 
-app.listen(3000, () => {
-  console.log("app listening on port 3000");
+app.listen(port, '0.0.0.0', () => {
+  console.log("app listening on port" + port);
+  console.log(URL)
 });
