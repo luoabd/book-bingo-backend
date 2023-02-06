@@ -25,6 +25,8 @@ jobs:
         key: ${{ secrets.PRIVATE_KEY }}
         port: 22
         script: |
+          eval `ssh-agent -s`
+          ssh-add ~/.ssh/id_rsa_luoabd-github
           cd /extra/book-bingo/book-bingo-backend/
           git pull origin main
           git status
