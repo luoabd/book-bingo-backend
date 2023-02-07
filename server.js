@@ -4,6 +4,7 @@ import * as dotenv from "dotenv";
 import { createCanvas, loadImage } from "canvas";
 import cors from "cors";
 import { config } from "./Constants.js";
+import cheerio from "cheerio";
 
 dotenv.config();
 
@@ -17,6 +18,39 @@ let corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+app.get("/scrape", function (req, res) {
+
+  async function fetchSearchResults() {
+    const inputValue = req.query.search_q;
+    const resList = {}
+
+    const response = await fetch(
+      `https://www.goodreads.com/search?utf8=%E2%9C%93&q=${inputValue}&search_type=books`
+    );
+    const body = await response.text();
+    
+    const $ = cheerio.load(body)
+
+    $('.bookTitle').each((i, title) => {
+      resList[i] = {}
+      const titleNode = $(title)
+      const titleText = titleNode.text().trim();
+      resList[i].id = i;
+      resList[i].title = titleText;
+      
+    })
+    $('.bookCover').each((i, cover) => {
+      const coverNode = $(cover)
+      const coverSrc = coverNode.attr('src').replace(/_[^]+_./g,"");
+      resList[i].imgLink = coverSrc;
+    })
+
+    return resList;
+  }
+  fetchSearchResults().then((resList) => {
+    res.send(resList);
+  });
+});
 app.get("/api", function (req, res) {
   async function fetchBooksJSON() {
     const api_key = process.env.API_KEY;
@@ -55,9 +89,15 @@ app.post("/canvas", function (req, res) {
             ctx.drawImage(image, 130 + 370 * j, 332 + 400 * i, 254, 316);
           });
           const drawStar = await loadImage("./star.png").then((image) => {
-            for (let k=0; k < prompt.starRating; k++)
-            ctx.drawImage(image, 80 + 370 * j, 332 + (k * 60.5) + 400 * i, 42, 44)
-          })
+            for (let k = 0; k < prompt.starRating; k++)
+              ctx.drawImage(
+                image,
+                80 + 370 * j,
+                332 + k * 60.5 + 400 * i,
+                42,
+                44
+              );
+          });
         }
       }
     }
@@ -76,6 +116,6 @@ app.post("/canvas", function (req, res) {
   exportBoard();
 });
 
-app.listen(port, '0.0.0.0', () => {
+app.listen(port, "0.0.0.0", () => {
   console.log("app listening on port " + port);
 });
