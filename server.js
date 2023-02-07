@@ -51,9 +51,13 @@ app.post("/canvas", function (req, res) {
         let prompt = req.body[idx];
         if (prompt.isFilled) {
           // Async shenanigans
-          const draw = await loadImage(prompt.imgLink).then((image) => {
+          const drawCover = await loadImage(prompt.imgLink).then((image) => {
             ctx.drawImage(image, 130 + 370 * j, 332 + 400 * i, 254, 316);
           });
+          const drawStar = await loadImage("./star.png").then((image) => {
+            for (let k=0; k < prompt.starRating; k++)
+            ctx.drawImage(image, 80 + 370 * j, 332 + (k * 60.5) + 400 * i, 42, 44)
+          })
         }
       }
     }
@@ -73,6 +77,5 @@ app.post("/canvas", function (req, res) {
 });
 
 app.listen(port, '0.0.0.0', () => {
-  console.log("app listening on port" + port);
-  console.log(URL)
+  console.log("app listening on port " + port);
 });
