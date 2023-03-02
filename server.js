@@ -146,7 +146,7 @@ app.post("/canvas", function (req, res) {
                 hStar
               );
           });
-          if (boardName === "rfantasy") {
+          if (boardName === "rfantasy" && prompt.hardMode) {
             const drawHardMode = await loadImage("./hm.png").then((image) => {
               ctx.drawImage(
                 image,
