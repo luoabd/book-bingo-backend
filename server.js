@@ -19,31 +19,34 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get("/scrape", function (req, res) {
-
   async function fetchSearchResults() {
     const inputValue = req.query.search_q;
-    const resList = {}
+    const resList = {};
 
     const response = await fetch(
-      `https://www.goodreads.com/search?utf8=%E2%9C%93&q=${inputValue}&search_type=books`
+      `https://www.goodreads.com/search?utf8=%E2%9C%93&q=${inputValue}&search_type=books&per_page=10`
     );
     const body = await response.text();
-    
-    const $ = cheerio.load(body)
 
-    $('.bookTitle').each((i, title) => {
-      resList[i] = {}
-      const titleNode = $(title)
+    const $ = cheerio.load(body);
+
+    $(".bookTitle").each((i, title) => {
+      resList[i] = {};
+      const titleNode = $(title);
       const titleText = titleNode.text().trim();
       resList[i].id = i;
       resList[i].title = titleText;
-      
-    })
-    $('.bookCover').each((i, cover) => {
-      const coverNode = $(cover)
-      const coverSrc = coverNode.attr('src').replace(/_[^]+_./g,"");
+    });
+    $(".bookCover").each((i, cover) => {
+      const coverNode = $(cover);
+      const coverSrc = coverNode.attr("src").replace(/_[^]+_./g, "");
       resList[i].imgLink = coverSrc;
-    })
+    });
+    $("a[href^='/work/editions/']").each((i, edition) => {
+      const editionNode = $(edition);
+      const editionSrc = editionNode.attr("href").match(/[^\D]+/g);
+      resList[i].editionId = editionSrc[0];
+    });
 
     return resList;
   }
@@ -51,6 +54,7 @@ app.get("/scrape", function (req, res) {
     res.send(resList);
   });
 });
+
 app.get("/api", function (req, res) {
   async function fetchBooksJSON() {
     const api_key = process.env.API_KEY;
@@ -71,10 +75,44 @@ app.get("/api", function (req, res) {
 });
 
 app.post("/canvas", function (req, res) {
-  const canvas = createCanvas(2000, 2300);
+  let boardName = req.query.board;
+  let fileName, xCanvas, yCanvas;
+  let xCover, xCoverPad, yCover, yCoverPad, wCover, hCover;
+  let xStar, yStarPad, wStar, hStar;
+
+  if (boardName === "fullybooked") {
+    fileName = "fullybooked";
+    xCover = 130;
+    xCoverPad = 370;
+    yCover = 332;
+    yCoverPad = 400;
+    wCover = 254;
+    hCover = 316;
+    xStar = 80;
+    yStarPad = 60.5;
+    wStar = 42;
+    hStar = 44;
+    xCanvas = 2000;
+    yCanvas = 2300;
+  } else {
+    fileName = "rfantasy";
+    xCover = 93; //118
+    xCoverPad = 365; //360
+    yCover = 443; // 482
+    yCoverPad = 530; // 525
+    wCover = 262; // 212
+    hCover = 411; // 333
+    xStar = 45;
+    yStarPad = 60.5;  //todo
+    wStar = 42;
+    hStar = 44;
+    xCanvas = 1878;
+    yCanvas = 3060;
+  }
+  const canvas = createCanvas(xCanvas, yCanvas);
   const ctx = canvas.getContext("2d");
 
-  loadImage("./bingo_board.png").then((image) => {
+  loadImage(`./${fileName}.png`).then((image) => {
     ctx.drawImage(image, 0, 0);
   });
 
@@ -86,16 +124,22 @@ app.post("/canvas", function (req, res) {
         if (prompt.isFilled) {
           // Async shenanigans
           const drawCover = await loadImage(prompt.imgLink).then((image) => {
-            ctx.drawImage(image, 130 + 370 * j, 332 + 400 * i, 254, 316);
+            ctx.drawImage(
+              image,
+              xCover + xCoverPad * j,
+              yCover + yCoverPad * i,
+              wCover,
+              hCover
+            );
           });
           const drawStar = await loadImage("./star.png").then((image) => {
             for (let k = 0; k < prompt.starRating; k++)
               ctx.drawImage(
                 image,
-                80 + 370 * j,
-                332 + k * 60.5 + 400 * i,
-                42,
-                44
+                xStar + xCoverPad * j,
+                10 + yCover + k * yStarPad + yCoverPad * i,
+                wStar,
+                hStar
               );
           });
         }
