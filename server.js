@@ -79,6 +79,7 @@ app.post("/canvas", function (req, res) {
   let fileName, xCanvas, yCanvas;
   let xCover, xCoverPad, yCover, yCoverPad, wCover, hCover;
   let xStar, yStarPad, wStar, hStar;
+  let yHardMode, wHardMode, hHardMode;
 
   if (boardName === "fullybooked") {
     fileName = "fullybooked";
@@ -96,18 +97,21 @@ app.post("/canvas", function (req, res) {
     yCanvas = 2300;
   } else {
     fileName = "rfantasy";
-    xCover = 93; //118
+    xCover = 95; //118
     xCoverPad = 365; //360
     yCover = 443; // 482
     yCoverPad = 530; // 525
     wCover = 262; // 212
     hCover = 411; // 333
     xStar = 45;
-    yStarPad = 60.5;  //todo
+    yStarPad = 60.5; //todo
     wStar = 42;
     hStar = 44;
     xCanvas = 1878;
     yCanvas = 3060;
+    yHardMode = 785;
+    wHardMode = 70;
+    hHardMode = 70;
   }
   const canvas = createCanvas(xCanvas, yCanvas);
   const ctx = canvas.getContext("2d");
@@ -142,6 +146,17 @@ app.post("/canvas", function (req, res) {
                 hStar
               );
           });
+          if (boardName === "rfantasy") {
+            const drawHardMode = await loadImage("./hm.png").then((image) => {
+              ctx.drawImage(
+                image,
+                xStar - 13 + xCoverPad * j,
+                yHardMode + yCoverPad * i,
+                wHardMode,
+                hHardMode
+              );
+            });
+          }
         }
       }
     }
