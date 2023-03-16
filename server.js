@@ -115,6 +115,8 @@ app.post("/canvas", function (req, res) {
   }
   const canvas = createCanvas(xCanvas, yCanvas);
   const ctx = canvas.getContext("2d");
+  ctx.textAlign = "center";
+  ctx.font = "20px Calibri";
 
   loadImage(`./${fileName}.png`).then((image) => {
     ctx.drawImage(image, 0, 0);
@@ -122,10 +124,12 @@ app.post("/canvas", function (req, res) {
 
   const drawBoard = async () => {
     for (let i = 0; i < 5; i++) {
+      let titlePad = i == 1 || i == 2 ? 545 : 536;
       for (let j = 0; j < 5; j++) {
         let idx = 5 * i + j;
         let prompt = req.body[idx];
         if (prompt.isFilled) {
+          let titleText = prompt.title.split("(")[0];
           // Async shenanigans
           const drawCover = await loadImage(prompt.imgLink).then((image) => {
             ctx.drawImage(
@@ -134,6 +138,14 @@ app.post("/canvas", function (req, res) {
               yCover + yCoverPad * i,
               wCover,
               hCover
+            );
+            printAtWordWrap(
+              ctx,
+              titleText,
+              38 + xCoverPad / 2 + xCoverPad * j,
+              400 + titlePad * i,
+              20,
+              330
             );
           });
           const drawStar = await loadImage("./star.png").then((image) => {
@@ -174,6 +186,39 @@ app.post("/canvas", function (req, res) {
 
   exportBoard();
 });
+
+function printAtWordWrap(context, text, x, y, lineHeight, fitWidth) {
+  fitWidth = fitWidth || 0;
+
+  if (fitWidth <= 0) {
+    context.fillText(text, x, y);
+    return;
+  }
+  var words = text.split(" ");
+  var currentLine = 0;
+  var idx = 1;
+  while (words.length > 0 && idx <= words.length) {
+    var str = words.slice(0, idx).join(" ");
+    var w = context.measureText(str).width;
+    if (w > fitWidth) {
+      if (idx == 1) {
+        idx = 2;
+      }
+      context.fillText(
+        words.slice(0, idx - 1).join(" "),
+        x,
+        y + lineHeight * currentLine
+      );
+      currentLine++;
+      words = words.splice(idx - 1);
+      idx = 1;
+    } else {
+      idx++;
+    }
+  }
+  if (idx > 0)
+    context.fillText(words.join(" "), x, y + lineHeight * currentLine);
+}
 
 app.listen(port, "0.0.0.0", () => {
   console.log("app listening on port " + port);
