@@ -125,6 +125,7 @@ app.post("/canvas", function (req, res) {
   const drawBoard = async () => {
     for (let i = 0; i < 5; i++) {
       let titlePad = i == 1 || i == 2 ? 545 : 536;
+      let coverPad = i == 1 || i == 2 ? 537 : 532;
       for (let j = 0; j < 5; j++) {
         let idx = 5 * i + j;
         let prompt = req.body[idx];
@@ -132,20 +133,23 @@ app.post("/canvas", function (req, res) {
           let titleText = prompt.title.split("(")[0];
           // Async shenanigans
           const drawCover = await loadImage(prompt.imgLink).then((image) => {
+            if (boardName === "rfantasy") {
+              yCoverPad = coverPad;
+              printAtWordWrap(
+                ctx,
+                titleText,
+                38 + xCoverPad / 2 + xCoverPad * j,
+                400 + titlePad * i,
+                20,
+                330
+              );
+            }
             ctx.drawImage(
               image,
               xCover + xCoverPad * j,
               yCover + yCoverPad * i,
               wCover,
               hCover
-            );
-            printAtWordWrap(
-              ctx,
-              titleText,
-              38 + xCoverPad / 2 + xCoverPad * j,
-              400 + titlePad * i,
-              20,
-              330
             );
           });
           const drawStar = await loadImage("./star.png").then((image) => {
