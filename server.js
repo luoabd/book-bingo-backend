@@ -96,22 +96,22 @@ app.post("/canvas", function (req, res) {
     xCanvas = 2000;
     yCanvas = 2300;
   } else {
-    fileName = "rfantasy";
-    xCover = 95; //118
-    xCoverPad = 365; //360
-    yCover = 443; // 482
-    yCoverPad = 530; // 525
-    wCover = 262; // 212
-    hCover = 411; // 333
-    xStar = 45;
-    yStarPad = 60.5; //todo
-    wStar = 42;
-    hStar = 44;
+    fileName = "rfantasy23";
+    xCover = 89;
+    xCoverPad = 338;
+    yCover = 470;
+    yCoverPad = 486;
+    wCover = 204;
+    hCover = 310;
+    xStar = 40;
+    yStarPad = 60.5;
+    wStar = 40;
+    hStar = 42;
     xCanvas = 1878;
     yCanvas = 3060;
-    yHardMode = 785;
-    wHardMode = 70;
-    hHardMode = 70;
+    yHardMode = 775;
+    wHardMode = 65;
+    hHardMode = 65;
   }
   const canvas = createCanvas(xCanvas, yCanvas);
   const ctx = canvas.getContext("2d");
@@ -124,8 +124,8 @@ app.post("/canvas", function (req, res) {
 
   const drawBoard = async () => {
     for (let i = 0; i < 5; i++) {
-      let titlePad = i == 1 || i == 2 ? 545 : 536;
-      let coverPad = i == 1 || i == 2 ? 537 : 532;
+      let titlePad = i == 1 ? 530 : 486;
+      let titleStart = i == 1 ? 370 : 414;
       for (let j = 0; j < 5; j++) {
         let idx = 5 * i + j;
         let prompt = req.body[idx];
@@ -134,14 +134,13 @@ app.post("/canvas", function (req, res) {
           // Async shenanigans
           const drawCover = await loadImage(prompt.imgLink).then((image) => {
             if (boardName === "rfantasy") {
-              yCoverPad = coverPad;
               printAtWordWrap(
                 ctx,
                 titleText,
-                38 + xCoverPad / 2 + xCoverPad * j,
-                400 + titlePad * i,
+                25 + xCoverPad / 2 + xCoverPad * j,
+                titleStart + titlePad * i,
                 20,
-                330
+                320
               );
             }
             ctx.drawImage(
@@ -166,7 +165,7 @@ app.post("/canvas", function (req, res) {
             const drawHardMode = await loadImage("./hm.png").then((image) => {
               ctx.drawImage(
                 image,
-                xStar - 13 + xCoverPad * j,
+                xStar - 12 + xCoverPad * j,
                 yHardMode + yCoverPad * i,
                 wHardMode,
                 hHardMode
