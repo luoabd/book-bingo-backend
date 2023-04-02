@@ -107,8 +107,8 @@ app.post("/canvas", function (req, res) {
     yStarPad = 60.5;
     wStar = 40;
     hStar = 42;
-    xCanvas = 1878;
-    yCanvas = 3060;
+    xCanvas = 1722;
+    yCanvas = 2811;
     yHardMode = 775;
     wHardMode = 65;
     hHardMode = 65;
