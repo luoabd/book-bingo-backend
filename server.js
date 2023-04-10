@@ -5,6 +5,7 @@ import { createCanvas, loadImage } from "canvas";
 import cors from "cors";
 import { config } from "./Constants.js";
 import cheerio from "cheerio";
+import sharp from "sharp";
 
 dotenv.config();
 
@@ -132,7 +133,12 @@ app.post("/canvas", function (req, res) {
         if (prompt.isFilled) {
           let titleText = prompt.title.split("(")[0];
           // Async shenanigans
-          const drawCover = await loadImage(prompt.imgLink).then((image) => {
+          // Convert all cover to JPG as there is no way to distinguish
+          // between webp and jpg on the goodreads response
+          const coverBuffer = await getImageBuffer(prompt.imgLink);
+          const coverImg = await sharp(coverBuffer).toFormat("png").toBuffer();
+
+          const drawCover = await loadImage(coverImg).then((image) => {
             if (boardName === "rfantasy") {
               printAtWordWrap(
                 ctx,
@@ -221,6 +227,12 @@ function printAtWordWrap(context, text, x, y, lineHeight, fitWidth) {
   }
   if (idx > 0)
     context.fillText(words.join(" "), x, y + lineHeight * currentLine);
+}
+
+async function getImageBuffer(imageUrl) {
+  const response = await fetch(imageUrl);
+  const imgResponse = response.arrayBuffer();
+  return imgResponse;
 }
 
 app.listen(port, "0.0.0.0", () => {
