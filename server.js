@@ -97,7 +97,7 @@ app.post("/canvas", function (req, res) {
     xCanvas = 2000;
     yCanvas = 2300;
   } else {
-    fileName = "rfantasy23";
+    fileName = "rfantasy23_empty";
     xCover = 89;
     xCoverPad = 338;
     yCover = 470;
@@ -117,7 +117,6 @@ app.post("/canvas", function (req, res) {
   const canvas = createCanvas(xCanvas, yCanvas);
   const ctx = canvas.getContext("2d");
   ctx.textAlign = "center";
-  ctx.font = "20px Calibri";
 
   loadImage(`./${fileName}.png`).then((image) => {
     ctx.drawImage(image, 0, 0);
@@ -127,9 +126,11 @@ app.post("/canvas", function (req, res) {
     for (let i = 0; i < 5; i++) {
       let titlePad = i == 1 ? 530 : 486;
       let titleStart = i == 1 ? 370 : 414;
+      let promptStart = 325;
       for (let j = 0; j < 5; j++) {
         let idx = 5 * i + j;
         let prompt = req.body[idx];
+        ctx.font = "20px Calibri";
         if (prompt.isFilled) {
           let titleText = prompt.title.split("(")[0];
           // Async shenanigans
@@ -179,6 +180,20 @@ app.post("/canvas", function (req, res) {
             });
           }
         }
+        if (boardName === "rfantasy") {
+          ctx.font = "bold 20px Calibri";
+          // const drawPrompt = await loadImage("./star.png").then((image) => {
+            await printAtWordWrap(
+              ctx,
+              prompt.prompt,
+              25 + xCoverPad / 2 + xCoverPad * j,
+              i == 0 ? promptStart : promptStart + 533 + 490 * (i - 1),
+              20,
+              320
+            );
+          // });
+        }
+
       }
     }
   };
