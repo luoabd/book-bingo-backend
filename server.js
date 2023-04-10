@@ -209,8 +209,9 @@ app.post("/canvas", function (req, res) {
         }
         if (boardName === "rfantasy") {
           ctx.font = "bold 20px Calibri";
-          // const drawPrompt = await loadImage("./star.png").then((image) => {
-          await printAtWordWrap(
+          // TODO: Needs to be improved
+          const drawPrompt = await loadImage("./star.png").then((image) => {
+          printAtWordWrap(
             ctx,
             prompt.prompt || promptList[idx],
             25 + xCoverPad / 2 + xCoverPad * j,
@@ -218,7 +219,7 @@ app.post("/canvas", function (req, res) {
             20,
             320
           );
-          // });
+          });
         }
       }
     }
