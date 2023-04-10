@@ -81,6 +81,33 @@ app.post("/canvas", function (req, res) {
   let xCover, xCoverPad, yCover, yCoverPad, wCover, hCover;
   let xStar, yStarPad, wStar, hStar;
   let yHardMode, wHardMode, hHardMode;
+  const promptList = [
+    "Title With a Title",
+    "Superheroes",
+    "Bottom of the TBR",
+    "Magical Realism",
+    "Young Adult",
+    "Mundane Jobs",
+    "Published in the 00s",
+    "Angels and Demons",
+    "Short Stories",
+    "Horror",
+    "Self Published",
+    "Middle East",
+    "Published in 2023",
+    "Multiverse",
+    "POC Author",
+    "Book Club",
+    "Novella",
+    "Mythical Beasts",
+    "Elemental Magic",
+    "Myths and Retellings",
+    "Queernorm",
+    "Coastal/Island",
+    "Druids",
+    "Robots",
+    "Sequel",
+  ];
 
   if (boardName === "fullybooked") {
     fileName = "fullybooked";
@@ -113,35 +140,6 @@ app.post("/canvas", function (req, res) {
     yHardMode = 775;
     wHardMode = 65;
     hHardMode = 65;
-
-    const promptList = [
-      "Title With a Title",
-      "Superheroes",
-      "Bottom of the TBR",
-      "Magical Realism",
-      "Young Adult",
-      "Mundane Jobs",
-      "Published in the 00s",
-      "Angels and Demons",
-      "Short Stories",
-      "Horror",
-      "Self Published",
-      "Middle East",
-      "Published in 2023",
-      "Multiverse",
-      "POC Author",
-      "Book Club",
-      "Novella",
-      "Mythical Beasts",
-      "Elemental Magic",
-      "Myths and Retellings",
-      "Queernorm",
-      "Coastal/Island",
-      "Druids",
-      "Robots",
-      "Sequel",
-    ];
-
   }
   const canvas = createCanvas(xCanvas, yCanvas);
   const ctx = canvas.getContext("2d");
@@ -212,17 +210,16 @@ app.post("/canvas", function (req, res) {
         if (boardName === "rfantasy") {
           ctx.font = "bold 20px Calibri";
           // const drawPrompt = await loadImage("./star.png").then((image) => {
-            await printAtWordWrap(
-              ctx,
-              prompt.prompt || promptList[idx],
-              25 + xCoverPad / 2 + xCoverPad * j,
-              i == 0 ? promptStart : promptStart + 533 + 490 * (i - 1),
-              20,
-              320
-            );
+          await printAtWordWrap(
+            ctx,
+            prompt.prompt || promptList[idx],
+            25 + xCoverPad / 2 + xCoverPad * j,
+            i == 0 ? promptStart : promptStart + 533 + 490 * (i - 1),
+            20,
+            320
+          );
           // });
         }
-
       }
     }
   };
