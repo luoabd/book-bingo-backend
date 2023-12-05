@@ -123,6 +123,20 @@ app.post("/canvas", function (req, res) {
     hStar = 44;
     xCanvas = 2000;
     yCanvas = 2300;
+  } else if(boardName === "fullybooked24") {
+    fileName = "fullybooked24";
+    xCover = 130;
+    xCoverPad = 370;
+    yCover = 332;
+    yCoverPad = 400;
+    wCover = 254;
+    hCover = 316;
+    xStar = 80;
+    yStarPad = 60.5;
+    wStar = 42;
+    hStar = 44;
+    xCanvas = 2000;
+    yCanvas = 2300;
   } else {
     fileName = "rfantasy23_empty";
     xCover = 89;
