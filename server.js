@@ -125,16 +125,16 @@ app.post("/canvas", function (req, res) {
     yCanvas = 2300;
   } else if(boardName === "fullybooked24") {
     fileName = "fullybooked24";
-    xCover = 130;
+    xCover = 155;
     xCoverPad = 370;
-    yCover = 332;
+    yCover = 345;
     yCoverPad = 400;
-    wCover = 254;
-    hCover = 316;
-    xStar = 80;
-    yStarPad = 60.5;
-    wStar = 42;
-    hStar = 44;
+    wCover = 205;
+    hCover = 295;
+    xStar = 110;
+    yStarPad = 50.5;
+    wStar = 33;
+    hStar = 38;
     xCanvas = 2000;
     yCanvas = 2300;
   } else {
