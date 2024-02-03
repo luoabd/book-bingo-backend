@@ -109,21 +109,7 @@ app.post("/canvas", function (req, res) {
     "Sequel",
   ];
 
-  if (boardName === "fullybooked") {
-    fileName = "fullybooked";
-    xCover = 130;
-    xCoverPad = 370;
-    yCover = 332;
-    yCoverPad = 400;
-    wCover = 254;
-    hCover = 316;
-    xStar = 80;
-    yStarPad = 60.5;
-    wStar = 42;
-    hStar = 44;
-    xCanvas = 2000;
-    yCanvas = 2300;
-  } else if(boardName === "fullybooked24") {
+  if (boardName === "fullybooked24") {
     fileName = "fullybooked24";
     xCover = 155;
     xCoverPad = 370;
@@ -137,7 +123,7 @@ app.post("/canvas", function (req, res) {
     hStar = 38;
     xCanvas = 2000;
     yCanvas = 2300;
-  } else {
+  } else if (boardName === "rfantasy"){
     fileName = "rfantasy23_empty";
     xCover = 89;
     xCoverPad = 338;
@@ -154,6 +140,20 @@ app.post("/canvas", function (req, res) {
     yHardMode = 775;
     wHardMode = 65;
     hHardMode = 65;
+  } else if(boardName === "bongo24") {
+    fileName = "bongo24";
+    xCover = 155;
+    xCoverPad = 370;
+    yCover = 345;
+    yCoverPad = 400;
+    wCover = 205;
+    hCover = 295;
+    xStar = 110;
+    yStarPad = 50.5;
+    wStar = 33;
+    hStar = 38;
+    xCanvas = 2000;
+    yCanvas = 2300;
   }
   const canvas = createCanvas(xCanvas, yCanvas);
   const ctx = canvas.getContext("2d");
