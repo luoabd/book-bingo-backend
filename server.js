@@ -142,18 +142,18 @@ app.post("/canvas", function (req, res) {
     hHardMode = 65;
   } else if(boardName === "bongo24") {
     fileName = "bongo24";
-    xCover = 155;
-    xCoverPad = 370;
-    yCover = 345;
-    yCoverPad = 400;
-    wCover = 205;
-    hCover = 295;
-    xStar = 110;
-    yStarPad = 50.5;
-    wStar = 33;
-    hStar = 38;
-    xCanvas = 2000;
-    yCanvas = 2300;
+    xCover = 97;
+    xCoverPad = 193;
+    yCover = 635;
+    yCoverPad = 220;
+    wCover = 123;
+    hCover = 178;
+    xStar = 78;
+    yStarPad = 32;
+    wStar = 18;
+    hStar = 20.5;
+    xCanvas = 1080;
+    yCanvas = 1920;
   }
   const canvas = createCanvas(xCanvas, yCanvas);
   const ctx = canvas.getContext("2d");
