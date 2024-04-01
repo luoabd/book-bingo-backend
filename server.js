@@ -38,6 +38,11 @@ app.get("/scrape", function (req, res) {
       resList[i].id = i;
       resList[i].title = titleText;
     });
+    $("*[itemprop = 'author']").each((i, author) => {
+      const authorNode = $(author);
+      const authorText = authorNode.text().split("(")[0].trim();
+      resList[i].author = authorText.replace(/\n\n\n/g, "");
+    });
     $(".bookCover").each((i, cover) => {
       const coverNode = $(cover);
       const coverSrc = coverNode.attr("src").replace(/_[^]+_./g, "");
@@ -136,7 +141,7 @@ app.post("/canvas", function (req, res) {
     wStar = 40;
     hStar = 42;
     xCanvas = 1722;
-    yCanvas = req.body.length > 25 ? 3011 : 2811;
+    yCanvas = req.body.length > 25 ? 2911 : 2811;
     yHardMode = 775;
     wHardMode = 65;
     hHardMode = 65;
@@ -257,7 +262,7 @@ app.post("/canvas", function (req, res) {
         const drawStories = await loadImage("./star.png").then(() => {
           printAtWordWrap(
             ctx,
-            prompt.title.split("(")[0] + " by ",
+            prompt.title.split("(")[0] + " by " + prompt.author,
             25 + xCoverPad / 2 + xCoverPad * ((i % 25) + 1),
             promptStart + 553 + 490 * 4,
             20,
