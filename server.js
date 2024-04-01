@@ -254,6 +254,7 @@ app.post("/canvas", function (req, res) {
           320
         );
       });
+      ctx.font = "20px Calibri";
       // TODO: Needs to be improved
       for (let i = 25; i < 29; i++) {
         let prompt = req.body[i];
