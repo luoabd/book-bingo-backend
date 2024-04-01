@@ -82,31 +82,31 @@ app.post("/canvas", function (req, res) {
   let xStar, yStarPad, wStar, hStar;
   let yHardMode, wHardMode, hHardMode;
   const promptList = [
-    "Title With a Title",
-    "Superheroes",
-    "Bottom of the TBR",
-    "Magical Realism",
-    "Young Adult",
-    "Mundane Jobs",
-    "Published in the 00s",
-    "Angels and Demons",
-    "Short Stories",
-    "Horror",
-    "Self Published",
-    "Middle East",
-    "Published in 2023",
-    "Multiverse",
-    "POC Author",
-    "Book Club",
-    "Novella",
-    "Mythical Beasts",
-    "Elemental Magic",
-    "Myths and Retellings",
-    "Queernorm",
-    "Coastal/Island",
-    "Druids",
-    "Robots",
-    "Sequel",
+    "First in a Series",
+    "Alliterative Title",
+    "Under the Surface",
+    "Criminals",
+    "Dreams",
+    "Entitled Animals",
+    "Bards",
+    "Prologues and Epilogues",
+    "Self Published / Indie",
+    "Romantasy",
+    "Dark Academia",
+    "Multi POV",
+    "Published in 2024",
+    "Character with a Disability",
+    "Published in the 90s",
+    "Orcs, Trolls and Goblins",
+    "Space Opera",
+    "Author of Color",
+    "Survival",
+    "Judge a Book by its Cover",
+    "Set in a Small Town",
+    "Five Short Stories",
+    "Eldritch Creatures",
+    "Reference Materials",
+    "Book Club or Readalong",
   ];
 
   if (boardName === "fullybooked24") {
@@ -123,8 +123,8 @@ app.post("/canvas", function (req, res) {
     hStar = 38;
     xCanvas = 2000;
     yCanvas = 2300;
-  } else if (boardName === "rfantasy"){
-    fileName = "rfantasy23_empty";
+  } else if (boardName === "rfantasy") {
+    fileName = req.body.length > 25 ? "rfantasy24_ss" : "rfantasy24";
     xCover = 89;
     xCoverPad = 338;
     yCover = 470;
@@ -136,11 +136,11 @@ app.post("/canvas", function (req, res) {
     wStar = 40;
     hStar = 42;
     xCanvas = 1722;
-    yCanvas = 2811;
+    yCanvas = req.body.length > 25 ? 3011 : 2811;
     yHardMode = 775;
     wHardMode = 65;
     hHardMode = 65;
-  } else if(boardName === "bongo24") {
+  } else if (boardName === "bongo24") {
     fileName = "bongo24";
     xCover = 97;
     xCoverPad = 193;
@@ -164,10 +164,10 @@ app.post("/canvas", function (req, res) {
   });
 
   const drawBoard = async () => {
+    let promptStart = 325;
     for (let i = 0; i < 5; i++) {
       let titlePad = i == 1 ? 530 : 486;
       let titleStart = i == 1 ? 370 : 414;
-      let promptStart = 325;
       for (let j = 0; j < 5; j++) {
         let idx = 5 * i + j;
         let prompt = req.body[idx];
@@ -225,16 +225,45 @@ app.post("/canvas", function (req, res) {
           ctx.font = "bold 20px Calibri";
           // TODO: Needs to be improved
           const drawPrompt = await loadImage("./star.png").then((image) => {
+            printAtWordWrap(
+              ctx,
+              prompt.prompt || promptList[idx],
+              25 + xCoverPad / 2 + xCoverPad * j,
+              i == 0 ? promptStart : promptStart + 533 + 490 * (i - 1),
+              20,
+              320
+            );
+          });
+        }
+      }
+    }
+    if (boardName === "rfantasy") {
+      ctx.font = "bold 20px Calibri";
+      const drawText = await loadImage("./star.png").then(() => {
+        printAtWordWrap(
+          ctx,
+          "Other short stories read:",
+          25 + xCoverPad / 2,
+          promptStart + 553 + 490 * 4,
+          20,
+          320
+        );
+      });
+      // TODO: Needs to be improved
+      for (let i = 25; i < 29; i++) {
+        let prompt = req.body[i];
+        if (prompt.isFilled == false)
+          continue;
+        const drawStories = await loadImage("./star.png").then(() => {
           printAtWordWrap(
             ctx,
-            prompt.prompt || promptList[idx],
-            25 + xCoverPad / 2 + xCoverPad * j,
-            i == 0 ? promptStart : promptStart + 533 + 490 * (i - 1),
+            prompt.title.split("(")[0] + " by ",
+            25 + xCoverPad / 2 + xCoverPad * ((i % 25) + 1),
+            promptStart + 553 + 490 * 4,
             20,
             320
           );
-          });
-        }
+        });
       }
     }
   };
