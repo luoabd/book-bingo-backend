@@ -114,14 +114,14 @@ app.post("/canvas", function (req, res) {
     "Book Club or Readalong",
   ];
 
-  if (boardName === "fullybooked24") {
-    fileName = "fullybooked24";
-    xCover = 155;
-    xCoverPad = 370;
-    yCover = 345;
-    yCoverPad = 400;
+  if (boardName === "fullybooked25") {
+    fileName = "fullybooked25";
+    xCover = 59;
+    xCoverPad = 265;
+    yCover = 390;
+    yCoverPad = 310;
     wCover = 205;
-    hCover = 295;
+    hCover = 265;
     xStar = 110;
     yStarPad = 50.5;
     wStar = 33;
@@ -204,16 +204,18 @@ app.post("/canvas", function (req, res) {
               hCover
             );
           });
-          const drawStar = await loadImage("./star.png").then((image) => {
-            for (let k = 0; k < prompt.starRating; k++)
-              ctx.drawImage(
-                image,
-                xStar + xCoverPad * j,
-                10 + yCover + k * yStarPad + yCoverPad * i,
-                wStar,
-                hStar
-              );
-          });
+          if (boardName != "fullybooked25") {
+            const drawStar = await loadImage("./star.png").then((image) => {
+              for (let k = 0; k < prompt.starRating; k++)
+                ctx.drawImage(
+                  image,
+                  xStar + xCoverPad * j,
+                  10 + yCover + k * yStarPad + yCoverPad * i,
+                  wStar,
+                  hStar
+                );
+            });  
+          }
           if (boardName === "rfantasy" && prompt.hardMode) {
             const drawHardMode = await loadImage("./hm.png").then((image) => {
               ctx.drawImage(
