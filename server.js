@@ -22,7 +22,6 @@ app.use(express.json());
 app.get("/scrape", function (req, res) {
   async function fetchSearchResults() {
     const inputValue = req.query.search_q;
-    const resList = {};
 
     const response = await fetch(
       `https://www.goodreads.com/search?utf8=%E2%9C%93&q=${inputValue}&search_type=books&per_page=10`
@@ -31,27 +30,64 @@ app.get("/scrape", function (req, res) {
 
     const $ = cheerio.load(body);
 
+    const processBookTitles = () => {
+      const titles = {};
     $(".bookTitle").each((i, title) => {
-      resList[i] = {};
-      const titleNode = $(title);
-      const titleText = titleNode.text().trim();
-      resList[i].id = i;
-      resList[i].title = titleText;
-    });
+        titles[i] = {
+          id: i,
+          title: $(title).text().trim()
+        };
+      });
+      return titles;
+    };
+  
+    const processAuthors = () => {
+      const authors = {};
     $("*[itemprop = 'author']").each((i, author) => {
-      const authorNode = $(author);
-      const authorText = authorNode.text().split("(")[0].trim();
-      resList[i].author = authorText.replace(/\n\n\n/g, "");
+        authors[i] = $(author).text().split("(")[0].trim().replace(/\n\n\n/g, "");
     });
+      return authors;
+    };
+  
+    const processCovers = () => {
+      const covers = {};
     $(".bookCover").each((i, cover) => {
-      const coverNode = $(cover);
-      const coverSrc = coverNode.attr("src").replace(/_[^]+_./g, "");
-      resList[i].imgLink = coverSrc;
-    });
+        covers[i] = $(cover).attr("src").replace(/_[^]+_./g, "");
+      });
+      return covers;
+    };
+  
+    const processEditions = async () => {
+      const editions = {};
+      const promises = [];
     $("a[href^='/work/editions/']").each((i, edition) => {
-      const editionNode = $(edition);
-      const editionSrc = editionNode.attr("href").match(/[^\D]+/g);
-      resList[i].editionId = editionSrc[0];
+        const editionSrc = $(edition).attr("href").match(/[^\D]+/g);
+        promises.push(
+          fetchAltCovers(editionSrc[0]).then(altCovers => {
+            editions[i] = altCovers;
+          })
+        );
+      });
+      await Promise.all(promises);
+      return editions;
+    };
+  
+    const [titles, authors, covers, editions] = await Promise.all([
+      processBookTitles(),
+      processAuthors(),
+      processCovers(),
+      processEditions()
+    ]);
+  
+    // Combine results
+    const resList = {};
+    Object.keys(titles).forEach(i => {
+      resList[i] = {
+        ...titles[i],
+        author: authors[i],
+        imgLink: covers[i],
+        altCovers: editions[i]
+      };
     });
 
     return resList;
@@ -60,6 +96,46 @@ app.get("/scrape", function (req, res) {
     res.send(resList);
   });
 });
+
+  async function fetchAltCovers(editionId) {
+    // const inputValue = req.query.edition_id;
+    const resList = [];
+    let imgSrc = null;
+
+    const response = await fetch(
+      `https://www.goodreads.com/work/editions/${editionId}?sort=num_ratings&filter_by_format=Paperback&per_page=10`
+    );
+    const body = await response.text();
+
+    const $ = cheerio.load(body);
+
+    $("div.elementList").each((i, element) => {
+      let englishEditionFound = false;
+
+      $(element).find('div.editionData div.moreDetails div.dataRow').each((j, row) => {
+        const dataTitle = $(row).find('.dataTitle').text().trim();
+        const dataValue = $(row).find('.dataValue').text().trim();
+
+      // Check if the DataTitle is 'Edition language:' and DataValue is 'English'
+      if (dataTitle === 'Edition language:' && dataValue === 'English') {
+        englishEditionFound = true;
+        return false; // Stop searching as we've found the correct language
+      }
+      });
+
+      if (englishEditionFound) {
+        imgSrc = $(element).find('img').attr('src');
+        resList.push(imgSrc);
+      }
+
+      if (resList.length >= 4) {
+        return false; // Break out of the loop
+      }
+
+    });
+
+    return resList;
+  }
 
 app.get("/api", function (req, res) {
   async function fetchBooksJSON() {
