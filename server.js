@@ -117,7 +117,7 @@ app.post("/canvas", function (req, res) {
   if (boardName === "fullybooked25") {
     fileName = "fullybooked25";
     xCover = 59;
-    xCoverPad = 265;
+    xCoverPad = 263;
     yCover = 390;
     yCoverPad = 310;
     wCover = 205;
