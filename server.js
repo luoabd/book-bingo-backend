@@ -6,8 +6,16 @@ import cors from "cors";
 import { config } from "./Constants.js";
 import cheerio from "cheerio";
 import sharp from "sharp";
+import NodeCache from 'node-cache';
 
 dotenv.config();
+
+const cache = new NodeCache({
+  stdTTL: 3600, // 1hr
+  checkperiod: 600, // Check for expired keys every 10 minutes
+  useClones: false,
+  maxKeys: 1000
+});
 
 const app = express();
 const URL = config.url;
@@ -22,6 +30,12 @@ app.use(express.json());
 app.get("/scrape", function (req, res) {
   async function fetchSearchResults() {
     const inputValue = req.query.search_q;
+    const cacheKey = `search_${inputValue.toLowerCase().trim()}`;
+
+    const cachedResult = cache.get(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
+    }
 
     const response = await fetch(
       `https://www.goodreads.com/search?utf8=%E2%9C%93&q=${inputValue}&search_type=books&per_page=10`
@@ -59,16 +73,9 @@ app.get("/scrape", function (req, res) {
   
     const processEditions = async () => {
       const editions = {};
-      const promises = [];
     $("a[href^='/work/editions/']").each((i, edition) => {
-        const editionSrc = $(edition).attr("href").match(/[^\D]+/g);
-        promises.push(
-          fetchAltCovers(editionSrc[0]).then(altCovers => {
-            editions[i] = altCovers;
-          })
-        );
+        editions[i] = $(edition).attr("href").match(/[^\D]+/g);
       });
-      await Promise.all(promises);
       return editions;
     };
   
@@ -86,10 +93,11 @@ app.get("/scrape", function (req, res) {
         ...titles[i],
         author: authors[i],
         imgLink: covers[i],
-        altCovers: editions[i]
+        edition: editions[i][0]
       };
     });
 
+    cache.set(cacheKey, resList);
     return resList;
   }
   fetchSearchResults().then((resList) => {
@@ -124,7 +132,7 @@ app.get("/scrape", function (req, res) {
       });
 
       if (englishEditionFound) {
-        imgSrc = $(element).find('img').attr('src');
+        imgSrc = $(element).find('img').attr('src').replace(/_[^]+_./g, "");;
         resList.push(imgSrc);
       }
 
@@ -403,6 +411,16 @@ async function getImageBuffer(imageUrl) {
   const imgResponse = response.arrayBuffer();
   return imgResponse;
 }
+
+app.get("/cache/stats", (req, res) => {
+  res.json(cache.getStats());
+});
+
+app.post("/cache/clear", (req, res) => {
+  // TODO: authorization
+  cache.flushAll();
+  res.json({ message: "Cache cleared successfully" });
+});
 
 app.listen(port, "0.0.0.0", () => {
   console.log("app listening on port " + port);
