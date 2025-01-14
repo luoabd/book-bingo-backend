@@ -105,8 +105,9 @@ app.get("/scrape", function (req, res) {
   });
 });
 
-  async function fetchAltCovers(editionId) {
-    // const inputValue = req.query.edition_id;
+app.get("/altcovers", function (req, res) {
+  async function fetchAltCovers() {
+    const editionId = req.query.edition_id;
     const resList = [];
     let imgSrc = null;
 
@@ -144,6 +145,10 @@ app.get("/scrape", function (req, res) {
 
     return resList;
   }
+  fetchAltCovers().then((resList) => {
+    res.send(resList);
+  });
+});
 
 app.get("/api", function (req, res) {
   async function fetchBooksJSON() {
