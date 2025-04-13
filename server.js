@@ -176,31 +176,31 @@ app.post("/canvas", function (req, res) {
   let xStar, yStarPad, wStar, hStar;
   let yHardMode, wHardMode, hHardMode;
   const promptList = [
-    "First in a Series",
-    "Alliterative Title",
-    "Under the Surface",
-    "Criminals",
-    "Dreams",
-    "Entitled Animals",
-    "Bards",
-    "Prologues and Epilogues",
-    "Self Published / Indie",
-    "Romantasy",
-    "Dark Academia",
-    "Multi POV",
-    "Published in 2024",
-    "Character with a Disability",
-    "Published in the 90s",
-    "Orcs, Trolls and Goblins",
-    "Space Opera",
-    "Author of Color",
-    "Survival",
-    "Judge a Book by its Cover",
-    "Set in a Small Town",
-    "Five Short Stories",
-    "Eldritch Creatures",
-    "Reference Materials",
+    "Knights and Paladins",
+    "Hidden Gem",
+    "Published in the 80s",
+    "High Fashion",
+    "Down with the System",
+    "Impossible Places",
+    "A Book in Parts",
+    "Gods and Pantheons",
+    "Last in a Series",
     "Book Club or Readalong",
+    "Parents",
+    "Epistolary",
+    "Published in 2025",
+    "Author of Color",
+    "Small Press or Self Published",
+    "Biopunk",
+    "Elves and Dwarves",
+    "LGBGTQIA Protagonist",
+    "Five Short Stories",
+    "Stranger in a Strange Land",
+    "Recycle A Bingo Square",
+    "Cozy SFF",
+    "Generic Title",
+    "Not A Book",
+    "Pirates",
   ];
 
   if (boardName === "fullybooked25") {
@@ -218,7 +218,7 @@ app.post("/canvas", function (req, res) {
     xCanvas = 2000;
     yCanvas = 2300;
   } else if (boardName === "rfantasy") {
-    fileName = req.body.length > 25 ? "rfantasy24_ss" : "rfantasy24";
+    fileName = req.body.length > 25 ? "rfantasy25_ss" : "rfantasy25";
     xCover = 89;
     xCoverPad = 338;
     yCover = 470;
