@@ -93,7 +93,6 @@ async function searchGames(query, cache) {
         id: i,
         title: game.name,
         imgLink: cover ? cover.url.replace('t_thumb', 't_cover_big').replace('//', 'https://') : null,
-        gameId: game.id,
       };
     });
 

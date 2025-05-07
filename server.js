@@ -8,6 +8,7 @@ import cheerio from "cheerio";
 import sharp from "sharp";
 import NodeCache from 'node-cache';
 import { searchGames } from "./igdbService.js";
+import { searchMedia } from './tmdbService.js';
 
 dotenv.config();
 
@@ -172,6 +173,14 @@ app.get("/api", function (req, res) {
 
 app.get("/games/search", function (req, res) {
   searchGames(req.query.q, cache).then((resList) => {
+    res.send(resList);
+  });
+});
+
+app.get("/media/search", function (req, res) {
+  const query = req.query.q;
+  
+  searchMedia(query, cache).then((resList) => {
     res.send(resList);
   });
 });
