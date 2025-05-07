@@ -7,6 +7,7 @@ import { config } from "./Constants.js";
 import cheerio from "cheerio";
 import sharp from "sharp";
 import NodeCache from 'node-cache';
+import { searchGames } from "./igdbService.js";
 
 dotenv.config();
 
@@ -166,6 +167,12 @@ app.get("/api", function (req, res) {
   }
   fetchBooksJSON().then((books) => {
     res.send(books);
+  });
+});
+
+app.get("/games/search", function (req, res) {
+  searchGames(req.query.q, cache).then((resList) => {
+    res.send(resList);
   });
 });
 
