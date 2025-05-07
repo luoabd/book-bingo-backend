@@ -17,7 +17,7 @@ async function searchMedia(query, cache) {
     return { error: 'TMDB API access token not configured' };
   }
 
-  const url = `https://api.themoviedb.org/3/search/multi?query=${inputValue}%20of%20thrones&include_adult=false&language=en-US&page=1`;
+  const url = `https://api.themoviedb.org/3/search/multi?query=${inputValue}&include_adult=false&language=en-US&page=1`;
   const options = {
     method: 'GET',
     headers: {
