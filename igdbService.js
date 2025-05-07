@@ -64,6 +64,11 @@ async function searchGames(query, cache) {
 
     const games = await gamesResponse.json();
     
+    if (!Array.isArray(games)) {
+        console.error('Unexpected IGDB API response format:', games);
+        return { error: 'Received invalid response format from IGDB' };
+    }
+      
     const gameIds = games.map(game => game.id);
     let coverData = [];
     
