@@ -68,7 +68,261 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+// Canvas board configurations
+const BOARD_CONFIGS = {
+  fullybooked25: {
+    fileName: "fullybooked25",
+    xCover: 59,
+    xCoverPad: 263,
+    yCover: 390,
+    yCoverPad: 310,
+    wCover: 205,
+    hCover: 265,
+    xStar: 110,
+    yStarPad: 50.5,
+    wStar: 33,
+    hStar: 38,
+    xCanvas: 2000,
+    yCanvas: 2300
+  },
+  rfantasy: {
+    fileName: (bodyLength) => bodyLength > 25 ? "rfantasy25_ss" : "rfantasy25",
+    xCover: 89,
+    xCoverPad: 338,
+    yCover: 470,
+    yCoverPad: 486,
+    wCover: 204,
+    hCover: 310,
+    xStar: 40,
+    yStarPad: 60.5,
+    wStar: 40,
+    hStar: 42,
+    xCanvas: 1722,
+    yCanvas: (bodyLength) => bodyLength > 25 ? 2911 : 2811,
+    yHardMode: 775,
+    wHardMode: 65,
+    hHardMode: 65
+  },
+  bongo24: {
+    fileName: "bongo24",
+    xCover: 97,
+    xCoverPad: 193,
+    yCover: 635,
+    yCoverPad: 220,
+    wCover: 123,
+    hCover: 178,
+    xStar: 78,
+    yStarPad: 32,
+    wStar: 18,
+    hStar: 20.5,
+    xCanvas: 1080,
+    yCanvas: 1920
+  }
+};
+
+const PROMPT_LIST = [
+  "Knights and Paladins",
+  "Hidden Gem",
+  "Published in the 80s",
+  "High Fashion",
+  "Down with the System",
+  "Impossible Places",
+  "A Book in Parts",
+  "Gods and Pantheons",
+  "Last in a Series",
+  "Book Club or Readalong",
+  "Parents",
+  "Epistolary",
+  "Published in 2025",
+  "Author of Color",
+  "Small Press or Self Published",
+  "Biopunk",
+  "Elves and Dwarves",
+  "LGBGTQIA Protagonist",
+  "Five Short Stories",
+  "Stranger in a Strange Land",
+  "Recycle A Bingo Square",
+  "Cozy SFF",
+  "Generic Title",
+  "Not A Book",
+  "Pirates",
+];
+
 // Helper functions
+function getBoardConfig(boardName, bodyLength = 0) {
+  const config = BOARD_CONFIGS[boardName];
+  if (!config) {
+    throw new Error(`Unknown board type: ${boardName}`);
+  }
+
+  // Handle dynamic properties
+  return {
+    ...config,
+    fileName: typeof config.fileName === 'function' ? config.fileName(bodyLength) : config.fileName,
+    yCanvas: typeof config.yCanvas === 'function' ? config.yCanvas(bodyLength) : config.yCanvas
+  };
+}
+
+async function createCanvasWithBackground(fileName, xCanvas, yCanvas) {
+  const canvas = createCanvas(xCanvas, yCanvas);
+  const ctx = canvas.getContext("2d");
+  ctx.textAlign = "center";
+
+  try {
+    const image = await loadImage(`./${fileName}.png`);
+    ctx.drawImage(image, 0, 0);
+  } catch (error) {
+    console.error(`Failed to load background image: ${fileName}.png`, error);
+    throw new Error('Failed to load board template');
+  }
+
+  return { canvas, ctx };
+}
+
+async function processBookCover(imgLink) {
+  try {
+    const coverBuffer = await getImageBuffer(imgLink);
+    return await sharp(coverBuffer).toFormat("png").toBuffer();
+  } catch (error) {
+    console.error('Failed to process book cover:', error);
+    throw new Error('Failed to process book cover image');
+  }
+}
+
+async function drawBookCover(ctx, coverImg, config, i, j) {
+  const image = await loadImage(coverImg);
+  ctx.drawImage(
+    image,
+    config.xCover + config.xCoverPad * j,
+    config.yCover + config.yCoverPad * i,
+    config.wCover,
+    config.hCover
+  );
+}
+
+async function drawStars(ctx, config, prompt, i, j) {
+  if (config.fileName.includes('fullybooked25')) return;
+
+  const starImage = await loadImage("./star.png");
+  for (let k = 0; k < prompt.starRating; k++) {
+    ctx.drawImage(
+      starImage,
+      config.xStar + config.xCoverPad * j,
+      10 + config.yCover + k * config.yStarPad + config.yCoverPad * i,
+      config.wStar,
+      config.hStar
+    );
+  }
+}
+
+async function drawHardMode(ctx, config, prompt, i, j) {
+  if (config.fileName.includes('rfantasy') && prompt.hardMode) {
+    const hmImage = await loadImage("./hm.png");
+    ctx.drawImage(
+      hmImage,
+      config.xStar - 12 + config.xCoverPad * j,
+      config.yHardMode + config.yCoverPad * i,
+      config.wHardMode,
+      config.hHardMode
+    );
+  }
+}
+
+async function drawPromptText(ctx, config, prompt, idx, i, j, promptStart) {
+  if (!config.fileName.includes('rfantasy')) return;
+
+  ctx.font = "bold 20px Calibri";
+  const dummyImage = await loadImage("./star.png"); // Using star.png as dummy for text rendering
+  printAtWordWrap(
+    ctx,
+    prompt.prompt || PROMPT_LIST[idx],
+    25 + config.xCoverPad / 2 + config.xCoverPad * j,
+    i == 0 ? promptStart : promptStart + 533 + 490 * (i - 1),
+    20,
+    320
+  );
+}
+
+async function drawExtraStories(ctx, reqBody, config, promptStart) {
+  if (!config.fileName.includes('rfantasy')) return;
+
+  ctx.font = "bold 20px Calibri";
+  const dummyImage = await loadImage("./star.png");
+  printAtWordWrap(
+    ctx,
+    "Other short stories read:",
+    25 + config.xCoverPad / 2,
+    promptStart + 553 + 490 * 4,
+    20,
+    320
+  );
+
+  ctx.font = "20px Calibri";
+  for (let i = 25; i < 29; i++) {
+    const prompt = reqBody[i];
+    if (!prompt?.isFilled) continue;
+
+    const dummyImage2 = await loadImage("./star.png");
+    printAtWordWrap(
+      ctx,
+      prompt.title.split("(")[0] + " by " + prompt.author,
+      25 + config.xCoverPad / 2 + config.xCoverPad * ((i % 25) + 1),
+      promptStart + 553 + 490 * 4,
+      20,
+      320
+    );
+  }
+}
+
+async function drawBoard(ctx, reqBody, config) {
+  const promptStart = 325;
+
+  for (let i = 0; i < 5; i++) {
+    const titlePad = i == 1 ? 530 : 486;
+    const titleStart = i == 1 ? 370 : 414;
+
+    for (let j = 0; j < 5; j++) {
+      const idx = 5 * i + j;
+      const prompt = reqBody[idx];
+
+      ctx.font = "20px Calibri";
+
+      if (prompt?.isFilled) {
+        const titleText = prompt.title.split("(")[0];
+
+        const coverImg = await processBookCover(prompt.imgLink);
+        await drawBookCover(ctx, coverImg, config, i, j);
+        await drawStars(ctx, config, prompt, i, j);
+        await drawHardMode(ctx, config, prompt, i, j);
+        if (config.fileName.includes('rfantasy')) {
+          printAtWordWrap(
+            ctx,
+            titleText,
+            25 + config.xCoverPad / 2 + config.xCoverPad * j,
+            titleStart + titlePad * i,
+            20,
+            320
+          );
+        }
+      }
+
+      await drawPromptText(ctx, config, prompt, idx, i, j, promptStart);
+    }
+  }
+
+  await drawExtraStories(ctx, reqBody, config, promptStart);
+}
+
+async function generateBingoBoard(boardName, reqBody) {
+  const config = getBoardConfig(boardName, reqBody.length);
+  const { canvas, ctx } = await createCanvasWithBackground(config.fileName, config.xCanvas, config.yCanvas);
+
+  await drawBoard(ctx, reqBody, config);
+
+  const img = canvas.toDataURL();
+  const data = img.replace(/^data:image\/\w+;base64,/, "");
+  return Buffer.from(data, "base64");
+}
 async function fetchSearchResults(inputValue) {
   const response = await fetch(
     `https://www.goodreads.com/search?utf8=%E2%9C%93&q=${inputValue}&search_type=books&per_page=10`
@@ -230,213 +484,10 @@ app.get("/media/search",
 app.post("/canvas",
   validateQuery('board', (val) => val && ['fullybooked25', 'rfantasy', 'bongo24'].includes(val)),
   asyncHandler(async (req, res) => {
-  let boardName = req.query.board;
-  let fileName, xCanvas, yCanvas;
-  let xCover, xCoverPad, yCover, yCoverPad, wCover, hCover;
-  let xStar, yStarPad, wStar, hStar;
-  let yHardMode, wHardMode, hHardMode;
-  const promptList = [
-    "Knights and Paladins",
-    "Hidden Gem",
-    "Published in the 80s",
-    "High Fashion",
-    "Down with the System",
-    "Impossible Places",
-    "A Book in Parts",
-    "Gods and Pantheons",
-    "Last in a Series",
-    "Book Club or Readalong",
-    "Parents",
-    "Epistolary",
-    "Published in 2025",
-    "Author of Color",
-    "Small Press or Self Published",
-    "Biopunk",
-    "Elves and Dwarves",
-    "LGBGTQIA Protagonist",
-    "Five Short Stories",
-    "Stranger in a Strange Land",
-    "Recycle A Bingo Square",
-    "Cozy SFF",
-    "Generic Title",
-    "Not A Book",
-    "Pirates",
-  ];
-
-  if (boardName === "fullybooked25") {
-    fileName = "fullybooked25";
-    xCover = 59;
-    xCoverPad = 263;
-    yCover = 390;
-    yCoverPad = 310;
-    wCover = 205;
-    hCover = 265;
-    xStar = 110;
-    yStarPad = 50.5;
-    wStar = 33;
-    hStar = 38;
-    xCanvas = 2000;
-    yCanvas = 2300;
-  } else if (boardName === "rfantasy") {
-    fileName = req.body.length > 25 ? "rfantasy25_ss" : "rfantasy25";
-    xCover = 89;
-    xCoverPad = 338;
-    yCover = 470;
-    yCoverPad = 486;
-    wCover = 204;
-    hCover = 310;
-    xStar = 40;
-    yStarPad = 60.5;
-    wStar = 40;
-    hStar = 42;
-    xCanvas = 1722;
-    yCanvas = req.body.length > 25 ? 2911 : 2811;
-    yHardMode = 775;
-    wHardMode = 65;
-    hHardMode = 65;
-  } else if (boardName === "bongo24") {
-    fileName = "bongo24";
-    xCover = 97;
-    xCoverPad = 193;
-    yCover = 635;
-    yCoverPad = 220;
-    wCover = 123;
-    hCover = 178;
-    xStar = 78;
-    yStarPad = 32;
-    wStar = 18;
-    hStar = 20.5;
-    xCanvas = 1080;
-    yCanvas = 1920;
-  }
-  const canvas = createCanvas(xCanvas, yCanvas);
-  const ctx = canvas.getContext("2d");
-  ctx.textAlign = "center";
-
-  loadImage(`./${fileName}.png`).then((image) => {
-    ctx.drawImage(image, 0, 0);
-  });
-
-  const drawBoard = async () => {
-    let promptStart = 325;
-    for (let i = 0; i < 5; i++) {
-      let titlePad = i == 1 ? 530 : 486;
-      let titleStart = i == 1 ? 370 : 414;
-      for (let j = 0; j < 5; j++) {
-        let idx = 5 * i + j;
-        let prompt = req.body[idx];
-        ctx.font = "20px Calibri";
-        if (prompt.isFilled) {
-          let titleText = prompt.title.split("(")[0];
-          // Async shenanigans
-          // Convert all cover to JPG as there is no way to distinguish
-          // between webp and jpg on the goodreads response
-          const coverBuffer = await getImageBuffer(prompt.imgLink);
-          const coverImg = await sharp(coverBuffer).toFormat("png").toBuffer();
-
-          const drawCover = await loadImage(coverImg).then((image) => {
-            if (boardName === "rfantasy") {
-              printAtWordWrap(
-                ctx,
-                titleText,
-                25 + xCoverPad / 2 + xCoverPad * j,
-                titleStart + titlePad * i,
-                20,
-                320
-              );
-            }
-            ctx.drawImage(
-              image,
-              xCover + xCoverPad * j,
-              yCover + yCoverPad * i,
-              wCover,
-              hCover
-            );
-          });
-          if (boardName != "fullybooked25") {
-            const drawStar = await loadImage("./star.png").then((image) => {
-              for (let k = 0; k < prompt.starRating; k++)
-                ctx.drawImage(
-                  image,
-                  xStar + xCoverPad * j,
-                  10 + yCover + k * yStarPad + yCoverPad * i,
-                  wStar,
-                  hStar
-                );
-            });  
-          }
-          if (boardName === "rfantasy" && prompt.hardMode) {
-            const drawHardMode = await loadImage("./hm.png").then((image) => {
-              ctx.drawImage(
-                image,
-                xStar - 12 + xCoverPad * j,
-                yHardMode + yCoverPad * i,
-                wHardMode,
-                hHardMode
-              );
-            });
-          }
-        }
-        if (boardName === "rfantasy") {
-          ctx.font = "bold 20px Calibri";
-          // TODO: Needs to be improved
-          const drawPrompt = await loadImage("./star.png").then((image) => {
-            printAtWordWrap(
-              ctx,
-              prompt.prompt || promptList[idx],
-              25 + xCoverPad / 2 + xCoverPad * j,
-              i == 0 ? promptStart : promptStart + 533 + 490 * (i - 1),
-              20,
-              320
-            );
-          });
-        }
-      }
-    }
-    if (boardName === "rfantasy") {
-      ctx.font = "bold 20px Calibri";
-      const drawText = await loadImage("./star.png").then(() => {
-        printAtWordWrap(
-          ctx,
-          "Other short stories read:",
-          25 + xCoverPad / 2,
-          promptStart + 553 + 490 * 4,
-          20,
-          320
-        );
-      });
-      ctx.font = "20px Calibri";
-      // TODO: Needs to be improved
-      for (let i = 25; i < 29; i++) {
-        let prompt = req.body[i];
-        if (prompt.isFilled == false)
-          continue;
-        const drawStories = await loadImage("./star.png").then(() => {
-          printAtWordWrap(
-            ctx,
-            prompt.title.split("(")[0] + " by " + prompt.author,
-            25 + xCoverPad / 2 + xCoverPad * ((i % 25) + 1),
-            promptStart + 553 + 490 * 4,
-            20,
-            320
-          );
-        });
-      }
-    }
-  };
-  const exportBoard = async () => {
-    const finalBoard = await drawBoard();
-    var img = canvas.toDataURL();
-
-    // strip off the data: url prefix to get just the base64-encoded bytes
-    var data = img.replace(/^data:image\/\w+;base64,/, "");
-    var buf = Buffer.from(data, "base64");
+    const boardBuffer = await generateBingoBoard(req.query.board, req.body);
     res.contentType("image/png");
-    res.send(buf);
-  };
-
-  exportBoard();
-})
+    res.send(boardBuffer);
+  })
 );
 
 function printAtWordWrap(context, text, x, y, lineHeight, fitWidth) {
