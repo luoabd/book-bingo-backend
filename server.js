@@ -7,6 +7,8 @@ import { config } from "./Constants.js";
 import * as cheerio from "cheerio";
 import sharp from "sharp";
 import NodeCache from 'node-cache';
+import fs from 'fs';
+import path from 'path';
 import { searchGames } from "./igdbService.js";
 import { searchMedia } from './tmdbService.js';
 
@@ -68,57 +70,21 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Canvas board configurations
-const BOARD_CONFIGS = {
-  fullybooked25: {
-    fileName: "fullybooked25",
-    xCover: 59,
-    xCoverPad: 263,
-    yCover: 390,
-    yCoverPad: 310,
-    wCover: 205,
-    hCover: 265,
-    xStar: 110,
-    yStarPad: 50.5,
-    wStar: 33,
-    hStar: 38,
-    xCanvas: 2000,
-    yCanvas: 2300
-  },
-  rfantasy: {
-    fileName: (bodyLength) => bodyLength > 25 ? "rfantasy25_ss" : "rfantasy25",
-    xCover: 89,
-    xCoverPad: 338,
-    yCover: 470,
-    yCoverPad: 486,
-    wCover: 204,
-    hCover: 310,
-    xStar: 40,
-    yStarPad: 60.5,
-    wStar: 40,
-    hStar: 42,
-    xCanvas: 1722,
-    yCanvas: (bodyLength) => bodyLength > 25 ? 2911 : 2811,
-    yHardMode: 775,
-    wHardMode: 65,
-    hHardMode: 65
-  },
-  bongo24: {
-    fileName: "bongo24",
-    xCover: 97,
-    xCoverPad: 193,
-    yCover: 635,
-    yCoverPad: 220,
-    wCover: 123,
-    hCover: 178,
-    xStar: 78,
-    yStarPad: 32,
-    wStar: 18,
-    hStar: 20.5,
-    xCanvas: 1080,
-    yCanvas: 1920
+// Load board configurations from JSON file
+let BOARD_CONFIGS = null;
+
+function loadBoardConfigs() {
+  if (!BOARD_CONFIGS) {
+    try {
+      const configPath = path.join(process.cwd(), 'board-configs.json');
+      const configData = fs.readFileSync(configPath, 'utf8');
+      BOARD_CONFIGS = JSON.parse(configData);
+    } catch (error) {
+      console.error('Failed to load board configurations:', error);
+    }
   }
-};
+  return BOARD_CONFIGS;
+}
 
 const PROMPT_LIST = [
   "Knights and Paladins",
@@ -150,17 +116,30 @@ const PROMPT_LIST = [
 
 // Helper functions
 function getBoardConfig(boardName, bodyLength = 0) {
-  const config = BOARD_CONFIGS[boardName];
+  const configs = loadBoardConfigs();
+  const config = configs[boardName];
   if (!config) {
     throw new Error(`Unknown board type: ${boardName}`);
   }
 
-  // Handle dynamic properties
-  return {
-    ...config,
-    fileName: typeof config.fileName === 'function' ? config.fileName(bodyLength) : config.fileName,
-    yCanvas: typeof config.yCanvas === 'function' ? config.yCanvas(bodyLength) : config.yCanvas
+  // Flatten the nested config structure for backward compatibility
+  const flatConfig = {
+    ...config.dimensions,
+    ...config.grid,
+    ...config.stars,
+    ...config.hardMode,
+    features: config.features || []
   };
+
+  // Handle dynamic fileName for rfantasy
+  if (boardName === 'rfantasy') {
+    flatConfig.fileName = bodyLength > 25 ? config.altFileName : config.fileName;
+    flatConfig.yCanvas = bodyLength > 25 ? config.dimensions.altYCanvas : config.dimensions.yCanvas;
+  } else {
+    flatConfig.fileName = config.fileName;
+  }
+
+  return flatConfig;
 }
 
 async function createCanvasWithBackground(fileName, xCanvas, yCanvas) {
