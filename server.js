@@ -4,7 +4,7 @@ import * as dotenv from "dotenv";
 import { createCanvas, loadImage } from "canvas";
 import cors from "cors";
 import { config } from "./Constants.js";
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 import sharp from "sharp";
 import NodeCache from 'node-cache';
 import { searchGames } from "./igdbService.js";
