@@ -1,0 +1,75 @@
+{
+  "fullybooked25": {
+    "fileName": "fullybooked25",
+    "dimensions": {
+      "xCanvas": 2000,
+      "yCanvas": 2300
+    },
+    "grid": {
+      "xCover": 59,
+      "yCover": 390,
+      "xCoverPad": 263,
+      "yCoverPad": 310,
+      "wCover": 205,
+      "hCover": 265
+    },
+    "stars": {
+      "xStar": 110,
+      "yStarPad": 50.5,
+      "wStar": 33,
+      "hStar": 38
+    },
+    "features": []
+  },
+  "rfantasy": {
+    "fileName": "rfantasy25",
+    "altFileName": "rfantasy25_ss",
+    "dimensions": {
+      "xCanvas": 1722,
+      "yCanvas": 2811,
+      "altYCanvas": 2911
+    },
+    "grid": {
+      "xCover": 89,
+      "yCover": 470,
+      "xCoverPad": 338,
+      "yCoverPad": 486,
+      "wCover": 204,
+      "hCover": 310
+    },
+    "stars": {
+      "xStar": 40,
+      "yStarPad": 60.5,
+      "wStar": 40,
+      "hStar": 42
+    },
+    "hardMode": {
+      "yHardMode": 775,
+      "wHardMode": 65,
+      "hHardMode": 65
+    },
+    "features": ["hardMode", "extraStories", "dynamicText"]
+  },
+  "bongo24": {
+    "fileName": "bongo24",
+    "dimensions": {
+      "xCanvas": 1080,
+      "yCanvas": 1920
+    },
+    "grid": {
+      "xCover": 97,
+      "yCover": 635,
+      "xCoverPad": 193,
+      "yCoverPad": 220,
+      "wCover": 123,
+      "hCover": 178
+    },
+    "stars": {
+      "xStar": 78,
+      "yStarPad": 32,
+      "wStar": 18,
+      "hStar": 20.5
+    },
+    "features": []
+  }
+}
