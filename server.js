@@ -19,6 +19,39 @@ const cache = new NodeCache({
   maxKeys: 1000
 });
 
+// Middleware functions
+const asyncHandler = (fn) => (req, res, next) => {
+  Promise.resolve(fn(req, res, next)).catch(next);
+};
+
+const cacheMiddleware = (cache, keyGenerator) => {
+  return (req, res, next) => {
+    const cacheKey = keyGenerator(req);
+    const cachedResult = cache.get(cacheKey);
+    if (cachedResult) {
+      return res.send(cachedResult);
+    }
+    // Store cache key for later use in route handler
+    req.cacheKey = cacheKey;
+    next();
+  };
+};
+
+const validateQuery = (param, validator) => {
+  return (req, res, next) => {
+    const value = req.query[param];
+    if (!validator(value)) {
+      return res.status(400).json({ error: `Invalid ${param}` });
+    }
+    next();
+  };
+};
+
+const cacheResponse = (cache, key, data, ttl = 3600) => {
+  cache.set(key, data, ttl);
+  return data;
+};
+
 const app = express();
 const URL = config.url;
 const port = config.port;
@@ -29,163 +62,174 @@ let corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-app.get("/scrape", function (req, res) {
-  async function fetchSearchResults() {
-    const inputValue = req.query.search_q;
-    const cacheKey = `search_${inputValue.toLowerCase().trim()}`;
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ error: 'Internal server error' });
+});
 
-    const cachedResult = cache.get(cacheKey);
-    if (cachedResult) {
-      return cachedResult;
-    }
+// Helper functions
+async function fetchSearchResults(inputValue) {
+  const response = await fetch(
+    `https://www.goodreads.com/search?utf8=%E2%9C%93&q=${inputValue}&search_type=books&per_page=10`
+  );
+  const body = await response.text();
 
-    const response = await fetch(
-      `https://www.goodreads.com/search?utf8=%E2%9C%93&q=${inputValue}&search_type=books&per_page=10`
-    );
-    const body = await response.text();
+  const $ = cheerio.load(body);
 
-    const $ = cheerio.load(body);
-
-    const processBookTitles = () => {
-      const titles = {};
+  const processBookTitles = () => {
+    const titles = {};
     $(".bookTitle").each((i, title) => {
-        titles[i] = {
-          id: i,
-          title: $(title).text().trim()
-        };
-      });
-      return titles;
-    };
-  
-    const processAuthors = () => {
-      const authors = {};
-    $("*[itemprop = 'author']").each((i, author) => {
-        authors[i] = $(author).text().split("(")[0].trim().replace(/\n\n\n/g, "");
-    });
-      return authors;
-    };
-  
-    const processCovers = () => {
-      const covers = {};
-    $(".bookCover").each((i, cover) => {
-        covers[i] = $(cover).attr("src").replace(/_[^]+_./g, "");
-      });
-      return covers;
-    };
-  
-    const processEditions = async () => {
-      const editions = {};
-    $("a[href^='/work/editions/']").each((i, edition) => {
-        editions[i] = $(edition).attr("href").match(/[^\D]+/g);
-      });
-      return editions;
-    };
-  
-    const [titles, authors, covers, editions] = await Promise.all([
-      processBookTitles(),
-      processAuthors(),
-      processCovers(),
-      processEditions()
-    ]);
-  
-    // Combine results
-    const resList = {};
-    Object.keys(titles).forEach(i => {
-      resList[i] = {
-        ...titles[i],
-        author: authors[i],
-        imgLink: covers[i],
-        edition: editions[i][0]
+      titles[i] = {
+        id: i,
+        title: $(title).text().trim()
       };
     });
+    return titles;
+  };
 
-    cache.set(cacheKey, resList);
-    return resList;
-  }
-  fetchSearchResults().then((resList) => {
-    res.send(resList);
+  const processAuthors = () => {
+    const authors = {};
+    $("*[itemprop = 'author']").each((i, author) => {
+      authors[i] = $(author).text().split("(")[0].trim().replace(/\n\n\n/g, "");
+    });
+    return authors;
+  };
+
+  const processCovers = () => {
+    const covers = {};
+    $(".bookCover").each((i, cover) => {
+      covers[i] = $(cover).attr("src").replace(/_[^]+_./g, "");
+    });
+    return covers;
+  };
+
+  const processEditions = async () => {
+    const editions = {};
+    $("a[href^='/work/editions/']").each((i, edition) => {
+      editions[i] = $(edition).attr("href").match(/[^\D]+/g);
+    });
+    return editions;
+  };
+
+  const [titles, authors, covers, editions] = await Promise.all([
+    processBookTitles(),
+    processAuthors(),
+    processCovers(),
+    processEditions()
+  ]);
+
+  // Combine results
+  const resList = {};
+  Object.keys(titles).forEach(i => {
+    resList[i] = {
+      ...titles[i],
+      author: authors[i],
+      imgLink: covers[i],
+      edition: editions[i][0]
+    };
   });
-});
 
-app.get("/altcovers", function (req, res) {
-  async function fetchAltCovers() {
-    const editionId = req.query.edition_id;
-    const resList = [];
-    let imgSrc = null;
+  return resList;
+}
 
-    const response = await fetch(
-      `https://www.goodreads.com/work/editions/${editionId}?sort=num_ratings&filter_by_format=Paperback&per_page=10`
-    );
-    const body = await response.text();
+app.get("/scrape",
+  validateQuery('search_q', (val) => val && val.length > 0),
+  cacheMiddleware(cache, (req) => `search_${req.query.search_q.toLowerCase().trim()}`),
+  asyncHandler(async (req, res) => {
+    const resList = await fetchSearchResults(req.query.search_q);
+    res.send(cacheResponse(cache, req.cacheKey, resList));
+  })
+);
 
-    const $ = cheerio.load(body);
+async function fetchAltCovers(editionId) {
+  const resList = [];
+  let imgSrc = null;
 
-    $("div.elementList").each((i, element) => {
-      let englishEditionFound = false;
+  const response = await fetch(
+    `https://www.goodreads.com/work/editions/${editionId}?sort=num_ratings&filter_by_format=Paperback&per_page=10`
+  );
+  const body = await response.text();
 
-      $(element).find('div.editionData div.moreDetails div.dataRow').each((j, row) => {
-        const dataTitle = $(row).find('.dataTitle').text().trim();
-        const dataValue = $(row).find('.dataValue').text().trim();
+  const $ = cheerio.load(body);
 
-      // Check if the DataTitle is 'Edition language:' and DataValue is 'English'
-      if (dataTitle === 'Edition language:' && dataValue === 'English') {
-        englishEditionFound = true;
-        return false; // Stop searching as we've found the correct language
-      }
-      });
+  $("div.elementList").each((i, element) => {
+    let englishEditionFound = false;
 
-      if (englishEditionFound) {
-        imgSrc = $(element).find('img').attr('src').replace(/_[^]+_./g, "");;
-        resList.push(imgSrc);
-      }
+    $(element).find('div.editionData div.moreDetails div.dataRow').each((j, row) => {
+      const dataTitle = $(row).find('.dataTitle').text().trim();
+      const dataValue = $(row).find('.dataValue').text().trim();
 
-      if (resList.length >= 4) {
-        return false; // Break out of the loop
-      }
-
+    // Check if the DataTitle is 'Edition language:' and DataValue is 'English'
+    if (dataTitle === 'Edition language:' && dataValue === 'English') {
+      englishEditionFound = true;
+      return false; // Stop searching as we've found the correct language
+    }
     });
 
-    return resList;
-  }
-  fetchAltCovers().then((resList) => {
+    if (englishEditionFound) {
+      imgSrc = $(element).find('img').attr('src').replace(/_[^]+_./g, "");;
+      resList.push(imgSrc);
+    }
+
+    if (resList.length >= 4) {
+      return false; // Break out of the loop
+    }
+
+  });
+
+  return resList;
+}
+
+app.get("/altcovers",
+  validateQuery('edition_id', (val) => val && val.length > 0),
+  asyncHandler(async (req, res) => {
+    const resList = await fetchAltCovers(req.query.edition_id);
     res.send(resList);
-  });
-});
+  })
+);
 
-app.get("/api", function (req, res) {
-  async function fetchBooksJSON() {
-    const api_key = process.env.API_KEY;
-    const fields =
-      "items/volumeInfo(title,authors,industryIdentifiers,imageLinks)";
-    const max = "5";
-    const inputValue = req.query.search_q;
+async function fetchBooksJSON(inputValue) {
+  const api_key = process.env.API_KEY;
+  const fields =
+    "items/volumeInfo(title,authors,industryIdentifiers,imageLinks)";
+  const max = "5";
 
-    const response = await fetch(
-      `https://www.googleapis.com/books/v1/volumes?q=${inputValue}&maxResults=${max}&fields=${fields}`
-    );
-    const books = await response.json();
-    return books.items;
-  }
-  fetchBooksJSON().then((books) => {
-    res.send(books);
-  });
-});
+  const response = await fetch(
+    `https://www.googleapis.com/books/v1/volumes?q=${inputValue}&maxResults=${max}&fields=${fields}`
+  );
+  const books = await response.json();
+  return books.items;
+}
 
-app.get("/games/search", function (req, res) {
-  searchGames(req.query.q, cache).then((resList) => {
+app.get("/api",
+  validateQuery('search_q', (val) => val && val.length > 0),
+  cacheMiddleware(cache, (req) => `google_books_${req.query.search_q.toLowerCase().trim()}`),
+  asyncHandler(async (req, res) => {
+    const books = await fetchBooksJSON(req.query.search_q);
+    res.send(cacheResponse(cache, req.cacheKey, books));
+  })
+);
+
+app.get("/games/search",
+  validateQuery('q', (val) => val && val.length > 0),
+  asyncHandler(async (req, res) => {
+    const resList = await searchGames(req.query.q, cache);
     res.send(resList);
-  });
-});
+  })
+);
 
-app.get("/media/search", function (req, res) {
-  const query = req.query.q;
-  
-  searchMedia(query, cache).then((resList) => {
+app.get("/media/search",
+  validateQuery('q', (val) => val && val.length > 0),
+  asyncHandler(async (req, res) => {
+    const resList = await searchMedia(req.query.q, cache);
     res.send(resList);
-  });
-});
+  })
+);
 
-app.post("/canvas", function (req, res) {
+app.post("/canvas",
+  validateQuery('board', (val) => val && ['fullybooked25', 'rfantasy', 'bongo24'].includes(val)),
+  asyncHandler(async (req, res) => {
   let boardName = req.query.board;
   let fileName, xCanvas, yCanvas;
   let xCover, xCoverPad, yCover, yCoverPad, wCover, hCover;
@@ -392,7 +436,8 @@ app.post("/canvas", function (req, res) {
   };
 
   exportBoard();
-});
+})
+);
 
 function printAtWordWrap(context, text, x, y, lineHeight, fitWidth) {
   fitWidth = fitWidth || 0;
