@@ -540,6 +540,11 @@ app.post("/cache/clear", (req, res) => {
   res.json({ message: "Cache cleared successfully" });
 });
 
+app.get("/stats.js", async (req, res) => {
+    const scriptText = await fetch("https://cloud.umami.is/script.js");
+    res.send(await scriptText.text())
+});
+
 app.listen(port, "0.0.0.0", () => {
   console.log("app listening on port " + port);
 });
