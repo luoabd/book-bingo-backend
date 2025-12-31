@@ -222,6 +222,27 @@ async function drawPromptText(ctx, config, prompt, idx, i, j, promptStart) {
   );
 }
 
+async function drawTitleAuthor(ctx, config, prompt, starRating, i, j) {
+  if (!config.fileName.includes('fullybooked25') || !prompt.isFilled) return;
+
+  ctx.font = "20px Calibri";
+  ctx.fillStyle = "white";
+
+  var titleText = prompt.title.split("(")[0].trim();
+  var authorText = prompt.author.split(",")[0].trim();
+  var ratingText = starRating != 0 ? ` - ${starRating}★` : "";
+  const dummyImage = await loadImage("./star.png"); // Using star.png as dummy for text rendering
+  printAtWordWrap(
+    ctx,
+    titleText + " by " + authorText + ratingText || "",
+    35 + config.xCoverPad / 2 + config.xCoverPad * j,
+    715 + 375 * i,
+    20,
+    215
+  );
+}
+
+
 async function drawExtraStories(ctx, reqBody, config, promptStart) {
   if (!config.fileName.includes('rfantasy')) return;
 
@@ -286,6 +307,7 @@ async function drawBoard(ctx, reqBody, config) {
       }
 
       await drawPromptText(ctx, config, prompt, idx, i, j, promptStart);
+      await drawTitleAuthor(ctx, config, prompt, prompt.starRating, i, j);
     }
   }
 

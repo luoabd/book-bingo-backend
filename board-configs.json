@@ -2,14 +2,14 @@
   "fullybooked25": {
     "fileName": "fullybooked25",
     "dimensions": {
-      "xCanvas": 2000,
-      "yCanvas": 2300
+      "xCanvas": 1285,
+      "yCanvas": 2330
     },
     "grid": {
-      "xCover": 59,
-      "yCover": 390,
-      "xCoverPad": 263,
-      "yCoverPad": 310,
+      "xCover": 57,
+      "yCover": 425,
+      "xCoverPad": 243,
+      "yCoverPad": 375,
       "wCover": 205,
       "hCover": 265
     },
