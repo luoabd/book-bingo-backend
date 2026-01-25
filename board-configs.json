@@ -1,21 +1,21 @@
 {
-  "fullybooked25": {
-    "fileName": "fullybooked25",
+  "fullybooked26": {
+    "fileName": "fullybooked26",
     "dimensions": {
-      "xCanvas": 1285,
-      "yCanvas": 2330
+      "xCanvas": 2085,
+      "yCanvas": 3127
     },
     "grid": {
-      "xCover": 57,
-      "yCover": 425,
-      "xCoverPad": 243,
-      "yCoverPad": 375,
-      "wCover": 205,
-      "hCover": 265
+      "xCover": 255,
+      "yCover": 587,
+      "xCoverPad": 335,
+      "yCoverPad": 511,
+      "wCover": 240,
+      "hCover": 343
     },
     "stars": {
-      "xStar": 110,
-      "yStarPad": 50.5,
+      "yStar": 940,
+      "xStarPad": 50.5,
       "wStar": 33,
       "hStar": 38
     },

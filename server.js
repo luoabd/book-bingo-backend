@@ -21,6 +21,26 @@ const cache = new NodeCache({
   maxKeys: 1000
 });
 
+// Image cache for star and hardmode images
+const imageCache = {
+  star: null,
+  hm: null
+};
+
+async function getStarImage(altColor = false) {
+  if (!imageCache.star) {
+    imageCache.star = altColor ? await loadImage("./star_brown.png") : await loadImage("./star.png");
+  }
+  return imageCache.star;
+}
+
+async function getHardModeImage() {
+  if (!imageCache.hm) {
+    imageCache.hm = await loadImage("./hm.png");
+  }
+  return imageCache.hm;
+}
+
 // Middleware functions
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -180,23 +200,52 @@ async function drawBookCover(ctx, coverImg, config, i, j) {
 }
 
 async function drawStars(ctx, config, prompt, i, j) {
-  if (config.fileName.includes('fullybooked25')) return;
+  
+  const fullStars = Math.floor(prompt.starRating);
+  const hasHalfStar = prompt.starRating % 1 !== 0;
 
-  const starImage = await loadImage("./star.png");
-  for (let k = 0; k < prompt.starRating; k++) {
-    ctx.drawImage(
-      starImage,
-      config.xStar + config.xCoverPad * j,
-      10 + config.yCover + k * config.yStarPad + config.yCoverPad * i,
-      config.wStar,
-      config.hStar
-    );
+  if (config.fileName.includes('fullybooked26')) {
+    const starImage = await getStarImage(true);
+    const y = config.yStar + config.yCoverPad * i;
+    // Horizontal star layout
+    for (let k = 0; k < fullStars; k++) {
+      ctx.drawImage(
+        starImage,
+        5 + config.xCover + k * config.xStarPad + config.xCoverPad * j,
+        y,
+        config.wStar,
+        config.hStar
+      );
+    }
+    if (hasHalfStar) {
+      const x = 5 + config.xCover + fullStars * config.xStarPad + config.xCoverPad * j;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, config.wStar / 2, config.hStar);
+      ctx.clip();
+      ctx.drawImage(starImage, x, y, config.wStar, config.hStar);
+      ctx.restore();
+    }
+  } else {
+    // TODO: half star for other layouts
+    const starImage = await getStarImage();
+    for (let k = 0; k < prompt.starRating; k++) {
+      ctx.drawImage(
+        starImage,
+        config.xStar + config.xCoverPad * j,
+        10 + config.yCover + k * config.yStarPad + config.yCoverPad * i,
+        config.wStar,
+        config.hStar
+      );
+    }
   }
+
 }
 
 async function drawHardMode(ctx, config, prompt, i, j) {
   if (config.fileName.includes('rfantasy') && prompt.hardMode) {
-    const hmImage = await loadImage("./hm.png");
+    const hmImage = await getHardModeImage();
     ctx.drawImage(
       hmImage,
       config.xStar - 12 + config.xCoverPad * j,
@@ -483,7 +532,7 @@ app.get("/media/search",
 );
 
 app.post("/canvas",
-  validateQuery('board', (val) => val && ['fullybooked25', 'rfantasy', 'bongo24'].includes(val)),
+  validateQuery('board', (val) => val && ['fullybooked26', 'rfantasy', 'bongo24'].includes(val)),
   asyncHandler(async (req, res) => {
     const boardBuffer = await generateBingoBoard(req.query.board, req.body);
     res.contentType("image/png");
