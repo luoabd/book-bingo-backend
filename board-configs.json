@@ -6,15 +6,15 @@
       "yCanvas": 3127
     },
     "grid": {
-      "xCover": 251,
-      "yCover": 583,
-      "xCoverPad": 334,
-      "yCoverPad": 510,
-      "wCover": 246,
-      "hCover": 351
+      "xCover": 255,
+      "yCover": 587,
+      "xCoverPad": 335,
+      "yCoverPad": 511,
+      "wCover": 240,
+      "hCover": 343
     },
     "stars": {
-      "yStar": 945,
+      "yStar": 940,
       "xStarPad": 50.5,
       "wStar": 33,
       "hStar": 38

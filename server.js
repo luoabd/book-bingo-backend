@@ -27,9 +27,9 @@ const imageCache = {
   hm: null
 };
 
-async function getStarImage() {
+async function getStarImage(altColor = false) {
   if (!imageCache.star) {
-    imageCache.star = await loadImage("./star.png");
+    imageCache.star = altColor ? await loadImage("./star_brown.png") : await loadImage("./star.png");
   }
   return imageCache.star;
 }
@@ -200,24 +200,26 @@ async function drawBookCover(ctx, coverImg, config, i, j) {
 }
 
 async function drawStars(ctx, config, prompt, i, j) {
-  const starImage = await getStarImage();
+  
   const fullStars = Math.floor(prompt.starRating);
   const hasHalfStar = prompt.starRating % 1 !== 0;
 
   if (config.fileName.includes('fullybooked26')) {
+    const starImage = await getStarImage(true);
+    const y = config.yStar + config.yCoverPad * i;
     // Horizontal star layout
     for (let k = 0; k < fullStars; k++) {
       ctx.drawImage(
         starImage,
         5 + config.xCover + k * config.xStarPad + config.xCoverPad * j,
-        config.yStar + config.yCoverPad * i,
+        y,
         config.wStar,
         config.hStar
       );
     }
     if (hasHalfStar) {
       const x = 5 + config.xCover + fullStars * config.xStarPad + config.xCoverPad * j;
-      const y = config.yStar + config.yCoverPad * i;
+
       ctx.save();
       ctx.beginPath();
       ctx.rect(x, y, config.wStar / 2, config.hStar);
@@ -227,6 +229,7 @@ async function drawStars(ctx, config, prompt, i, j) {
     }
   } else {
     // TODO: half star for other layouts
+    const starImage = await getStarImage();
     for (let k = 0; k < prompt.starRating; k++) {
       ctx.drawImage(
         starImage,
