@@ -24,14 +24,16 @@ const cache = new NodeCache({
 // Image cache for star and hardmode images
 const imageCache = {
   star: null,
+  altStar: null,
   hm: null
 };
 
 async function getStarImage(altColor = false) {
-  if (!imageCache.star) {
-    imageCache.star = altColor ? await loadImage("./star_brown.png") : await loadImage("./star.png");
+  const key = altColor ? "altStar" : "star";
+  if (!imageCache[key]) {
+    imageCache[key] = await loadImage(altColor ? "./star_brown.png" : "./star.png");
   }
-  return imageCache.star;
+  return imageCache[key];
 }
 
 async function getHardModeImage() {
@@ -228,16 +230,28 @@ async function drawStars(ctx, config, prompt, i, j) {
       ctx.restore();
     }
   } else {
-    // TODO: half star for other layouts
     const starImage = await getStarImage();
-    for (let k = 0; k < prompt.starRating; k++) {
+    const x = config.xStar + config.xCoverPad * j;
+    const yStart = 10 + config.yCover + config.yCoverPad * i;
+    // Vertical star layout
+    for (let k = 0; k < fullStars; k++) {
       ctx.drawImage(
         starImage,
-        config.xStar + config.xCoverPad * j,
-        10 + config.yCover + k * config.yStarPad + config.yCoverPad * i,
+        x,
+        yStart + k * config.yStarPad,
         config.wStar,
         config.hStar
       );
+    }
+    if (hasHalfStar) {
+      const y = yStart + fullStars * config.yStarPad;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, y, config.wStar / 2, config.hStar);
+      ctx.clip();
+      ctx.drawImage(starImage, x, y, config.wStar, config.hStar);
+      ctx.restore();
     }
   }
 
@@ -442,7 +456,10 @@ app.get("/scrape",
   cacheMiddleware(cache, (req) => `search_${req.query.search_q.toLowerCase().trim()}`),
   asyncHandler(async (req, res) => {
     const resList = await fetchSearchResults(req.query.search_q);
-    res.send(cacheResponse(cache, req.cacheKey, resList));
+    if (Object.keys(resList).length > 0) {
+      cacheResponse(cache, req.cacheKey, resList);
+    }
+    res.send(resList);
   })
 );
 
