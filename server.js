@@ -456,7 +456,10 @@ app.get("/scrape",
   cacheMiddleware(cache, (req) => `search_${req.query.search_q.toLowerCase().trim()}`),
   asyncHandler(async (req, res) => {
     const resList = await fetchSearchResults(req.query.search_q);
-    res.send(cacheResponse(cache, req.cacheKey, resList));
+    if (Object.keys(resList).length > 0) {
+      cacheResponse(cache, req.cacheKey, resList);
+    }
+    res.send(resList);
   })
 );
 
